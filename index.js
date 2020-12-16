@@ -1,48 +1,54 @@
-const cors = require('cors');
-const express = require('express');
-const bp = require('body-parser');
-const { connect } = require('mongoose');
-const { success, error } = require('consola');
-const passport = require('passport');
+const express = require('express')
+const compression = require('compression')
+const mongoose = require('mongoose')
+const cookieSession = require('cookie-session')
+const passport = require('passport')
+const bodyParser = require('body-parser')
+const helmet = require('helmet')
+const path = require('path')
+require('dotenv').config()
 
+const PORT = process.env.PORT || 5000
+const routes = require('./routes')
 
-// bring in app constants
-const { DB, PORT } = require('./config');
+mongoose.Promise = global.Promise
+mongoose.connect(
+  process.env.mongoURI,
+  { 
+    useNewUrlParser: true,
+    useUnifiedTopology: true 
+  },
+)
 
-// initialize app
-const app = express();
+//init app
+const app = express()
 
-// set up middlewares
-app.use(cors());
-app.use(bp.json()); // with body-parser
-app.use(passport.initialize());
+//set up midwares
+app.use(helmet())
+app.use(compression())
+app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(
+  cookieSession({
+    maxAge: 1000 * 60 * 60 * 24 * 15,
+    keys: [process.env.cookieKey],
+  }),
+)
 
-require('./middlewares/passport')(passport);
-// user router middleware
-app.use('/api/users', require('./routes/users'));
+app.use(passport.initialize())
+app.use(passport.session())
 
-const startApp = async () => {
-  // create connection with db
-  try {
-    await connect(DB, {
-      useUnifiedTopology: true,
-      useNewUrlParser: true,
-      useFindAndModify: true,
-    })
-    success({
-      message: `Successfully connected with the Database \n${DB}`,
-      badge: true,
-    })
-    // start listening for server on port
-    app.listen(PORT, () =>
-      success({ message: `Server started on PORT ${PORT}`, badge: true })
-    );
+// use routes
+app.use(routes)
 
-  } catch (err) {
-    error({
-      message: `Unable to connect with the Database \n${err}`,
-      badge: true
-    })
-  }
-};
-startApp();
+if (['production', 'ci'].includes(process.env.NODE_ENV)) {
+  app.use(express.static('client/build'))
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.resolve('client', 'build', 'index.html'))
+  })
+}
+
+app.listen(PORT, () => {
+  console.log(`Server started on PORT ${PORT}`)
+})
