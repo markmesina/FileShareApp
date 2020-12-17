@@ -4,7 +4,7 @@ const { Strategy, ExtractJwt } = require('passport-jwt')
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const FacebookStrategy = require('passport-facebook').Strategy
-
+require('dotenv').config()
 const options = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: SECRET,
@@ -63,30 +63,30 @@ module.exports = (passport) => {
     ),
   );
 
-  passport.use(
-    new FacebookStrategy(
-      {
-        clientID: process.env.facebookAppId,
-        clientSecret: process.env.facebookAppSecret,
-        callbackURL: process.env.facebookCallbackURI,
-        profileFields: ["id", "picture", "email"],
-        proxy: true
-      },
-      async (accessToken, refreshToken, profile, done) => {
-        try {
-          const existingUser = await User.findOne({ facebookId: profile.id });
-          if (existingUser) {
-            return done(null, existingUser);
-          }
-          const user = await new User({
-            facebookId: profile.id,
-            profilePhoto: profile.photos[0].value
-          }).save();
-          done(null, user);
-        } catch (err) {
-          done(err, null);
-        }
-      }
-    )
-  );
+  // passport.use(
+  //   new FacebookStrategy(
+  //     {
+  //       clientID: process.env.facebookAppId,
+  //       clientSecret: process.env.facebookAppSecret,
+  //       callbackURL: process.env.facebookCallbackURI,
+  //       profileFields: ["id", "picture", "email"],
+  //       proxy: true
+  //     },
+  //     async (accessToken, refreshToken, profile, done) => {
+  //       try {
+  //         const existingUser = await User.findOne({ facebookId: profile.id });
+  //         if (existingUser) {
+  //           return done(null, existingUser);
+  //         }
+  //         const user = await new User({
+  //           facebookId: profile.id,
+  //           profilePhoto: profile.photos[0].value
+  //         }).save();
+  //         done(null, user);
+  //       } catch (err) {
+  //         done(err, null);
+  //       }
+  //     }
+  //   )
+  // );
 }
