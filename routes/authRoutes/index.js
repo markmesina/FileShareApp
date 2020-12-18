@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const passport = require('passport');
-// const {} = require('../../../controllers/userController')
+const requireAuth = require("../../middlewares/requireAuth");
+const { createUser } = require('../../controllers/userController')
 
 
 // /auth prepended
@@ -32,18 +33,29 @@ router.route('/google/callback').get(
   }
 );
 
-router.route('/facebook').get(
-  passport.authenticate("facebook")
-);
+// router.route('/facebook').get(
+//   passport.authenticate("facebook")
+// );
 
-router.route('/facebook/callback').get(
-  (req, res) => {
-    if (!req.user.displayName) {
-      return res.redirect("/register_user");
-    }
-    res.redirect("/");
-  }
-);
+// router.route('/facebook/callback').get(
+//   (req, res) => {
+//     if (!req.user.displayName) {
+//       return res.redirect("/register_user");
+//     }
+//     res.redirect("/");
+//   }
+// );
+
+router.route("/register").post(createUser);
+
+router.get("/auth/logout", (req, res) => {
+  req.logout();
+  res.redirect("/");
+});
+
+router.get("/api/current_user", (req, res) => {
+  res.send(req.user);
+});
 
 module.exports = router
 
